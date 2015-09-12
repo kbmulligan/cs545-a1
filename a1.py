@@ -15,8 +15,8 @@ from matplotlib import pyplot as plt
 
 import perceptron as per
 
-max_iterations = 2000
-learning_rate = 0.01
+max_iterations = 100
+learning_rate = 0.1
 reserve = 0.1      # percent of examples to reserve for testing
 
 heart_file = "heart.csv"
@@ -39,18 +39,33 @@ def extract(examples):
     
     return labels, raw_data
     
-def accuracy(scores, labels):
-    acc = 0
-    correct = 0
-    if (len(scores) != len(labels)):
-        print 'Different number of labels and scores...'
+def error(predictions, labels):
+    error_rate = 1
+    errors = 0
+    if (len(predictions) != len(labels)):
+        print 'Different number of labels and predictions...'
     else:
-        for x in range(len(scores)):
-            if scores[x] == labels[x]:
-                correct += 1
+        for x in range(len(predictions)):
+            if predictions[x] != labels[x]:
+                errors += 1
                 
-        acc = correct / len(scores)
-    return acc
+        error_rate = errors / len(predictions)
+    return error_rate
+    
+def analyze(examples):
+    report = ''
+    report += 'Training examples: ' + str(len(examples)) + '\n'
+    report += 'Features: ' + str(len(examples[0])) + '\n'
+    
+    #print ''
+    #print 'Youngest:', min(np.transpose(examples)[0])
+    #print 'Oldest:', max(np.transpose(examples)[0])
+    #print ''
+    
+    report += 'Positives: ' + str(len([x for x in training if x[1] > 0])) + '\n'
+    report += 'Negatives: ' + str(len([x for x in training if x[1] < 0])) + '\n'
+    
+    return report
 
 if __name__ == '__main__':
     print 'Testing...a1.py'
@@ -59,58 +74,57 @@ if __name__ == '__main__':
     #print a
     #print normalize(a)
     
-    data = np.genfromtxt(heart_file, delimiter=",", comments="#")
+    heart_data = np.genfromtxt(heart_file, delimiter=",", comments="#")
     #X = np.genfromtxt(gisette_file)
 
-    #print data
-    #print len(data)
-    #print len(data[0])
+    #print heart_data
+    #print len(heart_data)
+    #print len(heart_data[0])
 
-    num_for_testing = math.floor(len(data) * reserve)
+    num_for_testing = math.floor(len(heart_data) * reserve)
     
-    #np.random.shuffle(data)
-    training = data[num_for_testing:]
-    testing = data[:num_for_testing]
+    #np.random.shuffle(heart_data)
+    training = heart_data[num_for_testing:]
+    testing = heart_data[:num_for_testing]
     
-    print len(data), 'examples loaded.'
+    print len(heart_data), 'examples loaded.'
     print len(training), 'for training'
     print len(testing), 'for testing'
+    print analyze(training)
     
-    labels, raw = extract(training)
+    training_labels, training_features = extract(training)
+    testing_labels, testing_features = extract(testing)
     
-    
-    print ''
-    print 'Training examples:', len(raw)
-    print 'Features:', len(raw[0])
-    
-    print ''
-    print 'Youngest:', min(np.transpose(raw)[0])
-    print 'Oldest:', max(np.transpose(raw)[0])
-
-    print 'Patient w/ heart disease:', len([x for x in training if x[1] > 0])
-    print 'Patient w/o heart disease:', len([x for x in training if x[1] < 0])
     
     p = per.Perceptron(max_iterations, learning_rate)
     
-    normalized = [normalize(x) for x in raw]
-    p.fit(np.array(raw), np.array(labels))
+    #normalized_training_features = [normalize(x) for x in training_features]
+    p.fit(np.array(training_features), np.array(training_labels))
     
     print ''
     print 'WEIGHT VECTOR'
     print p.w
-    
-    labels_results_train = [p.predict(i) for i in np.array(raw)]
     print ''
-    print 'Training Data Accuracy:', accuracy(labels_results_train, labels)
+    
+    training_labels_predictions = [p.predict(i) for i in np.array(training_features)]
+    print 'Training Data Error:', error(training_labels_predictions, training_labels)
+    
+    testing_labels_predictions = [p.predict(i) for i in np.array(testing_features)]
+    print 'Testing Data Error:', error(testing_labels_predictions, testing_labels)
+
+
+    b = per.PerceptronBias(max_iterations, learning_rate)
     
     
-    labels_test, raw_test = extract(testing)
-    labels_results_test = [p.predict(i) for i in np.array(raw_test)]
+    b.fit(np.array(training_features), np.array(training_labels))
     
-    #print ''
-    #print labels_test
-    #print labels_results_test
-    print 'Testing Data Accuracy:', accuracy(labels_results_test, labels_test)
+    print ''
+    print 'WEIGHT VECTOR'
+    print b.w
+    print ''
     
+    training_labels_predictions = [b.predict(i) for i in np.array(training_features)]
+    print 'Training Data Error:', error(training_labels_predictions, training_labels)
     
-    
+    testing_labels_predictions = [b.predict(i) for i in np.array(testing_features)]
+    print 'Testing Data Error:', error(testing_labels_predictions, testing_labels)
