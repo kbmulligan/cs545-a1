@@ -62,15 +62,24 @@ class Perceptron :
         
         scores = np.dot(self.w, X)
         return np.sign(scores)
-        
-class PerceptronBias :
+
+    def error(self, predictions, labels):
+        error_rate = 1
+        errors = 0
+        if (len(predictions) != len(labels)):
+            print 'Different number of labels and predictions...'
+        else:
+            for x in range(len(predictions)):
+                if predictions[x] != labels[x]:
+                    errors += 1
+                    
+            error_rate = float(errors) / len(predictions)
+        return error_rate
+
+         
+class PerceptronBias(Perceptron) :
 
     """An implementation of the perceptron algorithm with bias."""
-
-    def __init__(self, max_iterations=100, learning_rate=0.2) :
-
-        self.max_iterations = max_iterations
-        self.learning_rate = learning_rate
 
     def fit(self, Xinput, y) :
         """
@@ -109,9 +118,6 @@ class PerceptronBias :
         self.converged = converged
         if converged :
             print 'converged in %d iterations ' % iterations
-
-    def discriminant(self, x) :
-        return np.dot(self.w, x)
             
     def predict(self, X) :
         """
@@ -126,24 +132,17 @@ class PerceptronBias :
 
         bias = self.w[0]
         w = self.w[1:]
-        
-        # DO SOMETHING WITH BIAS HERE
 
-        scores = np.dot(w, X) + bias
+        scores = np.dot(w, X) + bias            # IS THIS THE CORRECT THING TO DO WITH BIAS???
         return np.sign(scores)
 
 
-class PerceptronPocket :
+class PerceptronPocket(PerceptronBias) :
 
     """An implementation of the perceptron algorithm w/ bias which tracks 
     the weight vector which is 'best-so-far'. """
 
-    def __init__(self, max_iterations=100, learning_rate=0.2) :
-
-        self.max_iterations = max_iterations
-        self.learning_rate = learning_rate
-
-    def fit(self, X, y) :
+    def fit(self, Xinput, y) :
         """
         Train a classifier using the perceptron training algorithm with bias.
         After training the attribute 'w' will contain the perceptron weight vector of length equal to len(X) + 1.
@@ -158,13 +157,16 @@ class PerceptronPocket :
         Array of labels.
         
         """
+        X = []
+
         # Hide bias here in extra term, set to 1
-        for i in range(len(X)):
-            np.insert(X[i],0,1)
+        for i in range(len(Xinput)):
+            X.append(np.insert(Xinput[i],0,1))
 
 
         self.w = np.zeros(len(X[0]))
         self.pocket = self.w            # initialize the pcoket weight vector
+        self.pocket_error = 1
         converged = False
         iterations = 0
         while (not converged and iterations < self.max_iterations) :
@@ -173,25 +175,21 @@ class PerceptronPocket :
                 if y[i] * self.discriminant(X[i]) <= 0 :                
                     self.w = self.w + y[i] * self.learning_rate * X[i]
                     converged = False
-                    #plot_data(X, y, self.w)
 
-                    if new_error() < old_error():
-                        self.pocket = self.w 
-
-
-                # test pocket vs new w
-
+                    predictions = [self.predict(i[1:], False) for i in X]          # strip bias terms from features, then predict using self.w
+                    error_now = self.error(predictions, y)
+                    if error_now < self.pocket_error:
+                        self.pocket = np.array(self.w)
+                        self.pocket_error = error_now
 
 
             iterations += 1
         self.converged = converged
         if converged :
             print 'converged in %d iterations ' % iterations
-
-    def discriminant(self, x) :
-        return np.dot(self.w, x)
             
-    def predict(self, X) :
+
+    def predict(self, X, use_pocket=True) :
         """
         make predictions using a trained linear classifier
 
@@ -200,10 +198,108 @@ class PerceptronPocket :
 
         X : ndarray, shape (num_examples, n_features)
         Training data.
+
+        use_pocket : Boolean, set to True if using self.pocket, otherwise uses self.w
         """
-        
-        scores = np.dot(self.w, X)
+
+        if (use_pocket == True):
+            bias = self.pocket[0]
+            w = self.w[1:]
+        else:
+            bias = self.w[0]
+            w = self.w[1:]
+
+        scores = np.dot(w, X) + bias            # IS THIS THE CORRECT THING TO DO WITH BIAS???
         return np.sign(scores)
+
+
+
+class PerceptronModified(Perceptron) :
+
+    """An implementation of the perceptron algorithm. This modified version
+    updats the weight vector based on the data point that maximizes the given function lambda.
+    Note that this implementation does not include a bias term."""
+
+    def fit(self, X, y) :
+        """
+        Train a classifier using the perceptron training algorithm.
+        After training the attribute 'w' will contain the perceptron weight vector.
+
+        Parameters
+        ----------
+
+        X : ndarray, shape (num_examples, n_features)
+        Training data.
+
+        y : ndarray, shape (n_examples,)
+        Array of labels.
+        
+        """
+        maximum_initial_w_value = 1
+        c = 0                           # init c and makes sure (0 < c < 1), not 0
+        while (c == 0):
+            c = np.random.uniform()
+
+        self.w = np.random.uniform(size=len(X[0])) * maximum_initial_w_value
+
+        converged = False
+        iterations = 0
+        while (not converged and iterations < self.max_iterations) :
+            converged = True
+
+            
+            #evaluate lambda and put in tuple (i, lambda_value) in list 'lambdas'
+            lambdas = [(i, y[i] * np.dot(self.w, X[i])) for i in range(len(X))]
+
+
+            
+            #filter for those i where lambda < c||w||
+            all_eligible = []
+            for lam in lambdas:
+                if (lam[1] < c * self.norm(self.w)):
+                    all_eligible.append(lam)
+
+            # print all_eligible, len(all_eligible)
+
+
+            # choose j (from all eligible i) for which lambda is maximized
+            j = ''
+
+            all_lambdas = [lam[1] for lam in all_eligible]
+            
+            if (all_lambdas == []):
+                # none are eligible
+                converged = True
+
+            else:
+                max_lambda = max(all_lambdas)
+
+                for lam in all_eligible:
+                    if (lam[1] == max_lambda):
+                        j = lam[0]
+                        break
+
+            if (j != ''):
+                #update w
+                self.w = self.w + y[j] * self.learning_rate * X[j]
+                converged = False
+            else:
+                converged = True
+
+            # stop if no more corrections are made
+            # if (False):
+            #     converged = True
+
+            iterations += 1
+
+        self.converged = converged
+        if converged :
+            print 'converged in %d iterations ' % iterations
+
+    def norm(self, x):
+        return np.sqrt(np.sum(np.square(x)))
+
+
 
 def generate_separable_data(N) :
     w = np.random.uniform(-1, 1, 2)
