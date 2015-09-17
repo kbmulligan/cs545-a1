@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 import perceptron as per
 
 max_iterations = 1000
-learning_rate = 0.1
+learning_rate = 0.2
 reserve = 0.2      # percent of examples to reserve for testing
 
 heart_file = "heart.csv"
@@ -112,10 +112,10 @@ def do_learning_curve(algorithm, training_data, testing_data):
 
     # x_range = np.arange(1, max_num_samples, step)
     x_range_floats = np.logspace(0, 3.6, samples)
-    print x_range_floats
+    # print x_range_floats
 
     x_range = [int(i) for i in np.floor(x_range_floats)]
-    print x_range
+    # print x_range
 
 
     for x in x_range:
@@ -206,9 +206,9 @@ if __name__ == '__main__':
 
     ####### GISETTE DATA ###########
 
-    # print '\n'
-    # print '--------- GISETTE DATA -----------'
-    # print 'Loading data...'
+    print '\n'
+    print '--------- GISETTE DATA -----------'
+    print 'Loading data...'
 
     gisette_data_features = np.genfromtxt(gisette_data_file)
     gisette_labels = np.genfromtxt(gisette_label_file)
@@ -229,21 +229,21 @@ if __name__ == '__main__':
     gtesting = gisette_data[:g_num_for_testing]
 
 
-    # print len(gisette_data), 'examples loaded.'
-    # print len(gtraining), 'for training'
-    # print len(gtesting), 'for testing'
-    # print ''
+    print len(gisette_data), 'examples loaded.'
+    print len(gtraining), 'for training'
+    print len(gtesting), 'for testing'
+    print ''
 
-    # test_perceptron(per.Perceptron, gtraining, gtesting)
-    # test_perceptron(per.PerceptronBias, gtraining, gtesting)
-    # test_perceptron(per.PerceptronPocket, gtraining, gtesting)
-    # test_perceptron(per.PerceptronModified, gtraining, gtesting)
+    test_perceptron(per.Perceptron, gtraining, gtesting)
+    test_perceptron(per.PerceptronBias, gtraining, gtesting)
+    test_perceptron(per.PerceptronPocket, gtraining, gtesting)
+    test_perceptron(per.PerceptronModified, gtraining, gtesting)
 
 
 
     ####### LEARNING CURVES ###########
 
-    do_learning_curve(per.PerceptronBias, gtraining, gtesting)
+    # do_learning_curve(per.PerceptronBias, gtraining, gtesting)
 
 
     ####### NORMALIZATION ###########
@@ -263,9 +263,11 @@ if __name__ == '__main__':
     print heart_data[0]
     print normalized_heart_data[0]
 
+    print '--------- NORMALIZED HEART DATA -----------'
 
-    htraining = normalized_heart_data[h_num_for_testing:]
-    htesting = normalized_heart_data[:h_num_for_testing]
+
+    hntraining = normalized_heart_data[h_num_for_testing:]
+    hntesting = normalized_heart_data[:h_num_for_testing]
     
     
     print len(heart_data), 'examples loaded.'
@@ -277,7 +279,7 @@ if __name__ == '__main__':
 
     print 'Results for SCALED data:\n'
     
-    test_perceptron(per.Perceptron, htraining, htesting)
-    test_perceptron(per.PerceptronBias, htraining, htesting)
-    test_perceptron(per.PerceptronPocket, htraining, htesting)
-    test_perceptron(per.PerceptronModified, htraining,htesting)
+    test_perceptron(per.Perceptron, hntraining, hntesting)
+    test_perceptron(per.PerceptronBias, hntraining, hntesting)
+    test_perceptron(per.PerceptronPocket, hntraining, hntesting)
+    test_perceptron(per.PerceptronModified, hntraining,hntesting)

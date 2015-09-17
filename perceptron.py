@@ -76,6 +76,10 @@ class Perceptron :
             error_rate = float(errors) / len(predictions)
         return error_rate
 
+    def norm(self, x):
+        # return np.sqrt(np.sum(np.square(x)))
+        return np.sqrt(np.dot(x,x))
+
          
 class PerceptronBias(Perceptron) :
 
@@ -157,12 +161,14 @@ class PerceptronPocket(PerceptronBias) :
         Array of labels.
         
         """
-        X = []
+        Xlist = []
 
         # Hide bias here in extra term, set to 1
         for i in range(len(Xinput)):
-            X.append(np.insert(Xinput[i],0,1))
+            Xlist.append(np.insert(Xinput[i],0,1))
 
+        # convert to np array
+        X = np.array(Xlist)
 
         self.w = np.zeros(len(X[0]))
         self.pocket = self.w            # initialize the pcoket weight vector
@@ -172,7 +178,7 @@ class PerceptronPocket(PerceptronBias) :
         while (not converged and iterations < self.max_iterations) :
             converged = True
             for i in range(len(X)) :
-                if y[i] * self.discriminant(X[i]) <= 0 :                
+                if y[i] * self.discriminant(X[i]) <= 0 :                           # if misclassified or on the line
                     self.w = self.w + y[i] * self.learning_rate * X[i]
                     converged = False
 
@@ -204,13 +210,13 @@ class PerceptronPocket(PerceptronBias) :
 
         if (use_pocket == True):
             bias = self.pocket[0]
-            w = self.w[1:]
+            w = self.pocket[1:]
         else:
             bias = self.w[0]
             w = self.w[1:]
 
-        scores = np.dot(w, X) + bias            # IS THIS THE CORRECT THING TO DO WITH BIAS???
-        return np.sign(scores)
+        score = np.dot(w, X) + bias            # IS THIS THE CORRECT THING TO DO WITH BIAS???
+        return np.sign(score)
 
 
 
@@ -236,7 +242,7 @@ class PerceptronModified(Perceptron) :
         
         """
         maximum_initial_w_value = 1
-        c = 0                           # init c and makes sure (0 < c < 1), not 0
+        c = 0.1                          # init c and makes sure (0 < c < 1), not 0
         while (c == 0):
             c = np.random.uniform()
 
@@ -259,7 +265,8 @@ class PerceptronModified(Perceptron) :
                 if (lam[1] < c * self.norm(self.w)):
                     all_eligible.append(lam)
 
-            # print all_eligible, len(all_eligible)
+            # print all_eligible
+            # print len(all_eligible), 'less than c||w||'
 
 
             # choose j (from all eligible i) for which lambda is maximized
@@ -272,10 +279,8 @@ class PerceptronModified(Perceptron) :
                 converged = True
 
             else:
-                max_lambda = max(all_lambdas)
-
                 for lam in all_eligible:
-                    if (lam[1] == max_lambda):
+                    if (lam[1] == max(all_lambdas)):
                         j = lam[0]
                         break
 
@@ -294,10 +299,13 @@ class PerceptronModified(Perceptron) :
 
         self.converged = converged
         if converged :
-            print 'converged in %d iterations ' % iterations
+            print 'PerceptronModified converged in %d iterations ' % iterations
+        else:
+            print 'PerceptronModified ran for %d iterations' % iterations
 
-    def norm(self, x):
-        return np.sqrt(np.sum(np.square(x)))
+        print 'C =', c
+
+    
 
 
 
